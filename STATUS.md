@@ -10,6 +10,7 @@
 - 29/10/2026 — Planilha própria desktop em Python (tkinter + openpyxl), só stdlib + openpyxl, 2 arquivos (modelo + UI em planilha.py). Pedido pelo Lula via Claude (agente principal).
 
 ## Feito (conferido)
+- 29/10/2026 — Código enviado ao GitHub: https://github.com/mentorbionline/rea_excel_claude_code (branch main, commit 4500c06). Fora dele: rea\, dist\ e __pycache__ (.gitignore). README.md criado na raiz.
 - 29/10/2026 — Pacote de compatibilidade pronto: 15 testes passam; planilha_code.exe refeito; planilha\exemplo_compatibilidade.xlsx (dados fictícios) aberto no .exe com cabeçalho colorido, datas dd/mm/aaaa, R$ e relatório só com Bordas, Células mescladas e Filtros (preservados).
 - 29/10/2026 — Ícone verde aparece na janela e na barra de tarefas (conferido por captura de tela). App renomeado: dist\planilha_code.exe + atalho C:\Users\USER\Desktop\planilha_code.lnk; aberto por ele, título 'Sem título - planilha_code'. Planilha.exe e Planilha.lnk antigos removidos. 11 testes passam.
 - 29/10/2026 — Executável criado (depois renomeado para planilha_code.exe): planilha\dist\Planilha.exe (32,8 MB, PyInstaller --onefile, ícone planilha\planilha.ico). Atalho C:\Users\USER\Desktop\Planilha.lnk criado; aberto por ele, a janela 'Sem título - Planilha' subiu.
@@ -19,10 +20,9 @@
 - Excel localizado: C:\Program Files\Microsoft Office\root\Office16\EXCEL.EXE — versão 16.0.19127.20860 (Microsoft 365), 70 MB, binário nativo.
 
 ## Falta
-1. Claude: enviar o código ao GitHub (mentorbionline/rea_excel_claude_code).
-2. Lula: anexar planilha\dist\planilha_code.exe numa Release no site do GitHub.
-3. Lula: testar com o arquivo real de funcionários, salvar e abrir no Excel para conferir.
-4. Ainda não feito: mostrar bordas, células mescladas e filtros (hoje só são preservados); desfazer de largura/congelar/abas.
+1. Lula: anexar planilha\dist\planilha_code.exe numa Release no site do GitHub.
+2. Lula: testar com o arquivo real de funcionários, salvar e abrir no Excel para conferir.
+3. Ainda não feito: mostrar bordas, células mescladas e filtros (hoje só são preservados); desfazer de largura/congelar/abas.
 
 ## Fatos
 - PyInstaller 6.22.3 instalado (pip --user) em 29/10/2026. Para refazer o .exe depois de mudar o código: python -m PyInstaller --noconfirm --onefile --windowed --name planilha_code --icon planilha.ico --add-data "planilha.ico;." --distpath dist planilha.py (dentro de planilha\).
