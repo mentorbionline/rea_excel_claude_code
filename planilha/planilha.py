@@ -82,6 +82,21 @@ def parse_date(s):
         return None
 
 
+ISO_RE = re.compile(r'(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2})(?::(\d{2})(?:\.\d+)?)?)?')
+
+
+def parse_iso(s):
+    """Texto '1989-06-10' ou '1989-06-10 00:00:00' (como o Excel exporta datas em texto) -> Date; senão None."""
+    m = ISO_RE.fullmatch(s)
+    if not m:
+        return None
+    y, mo, d, h, mi, sec = (int(g or 0) for g in m.groups())
+    try:
+        return to_serial(datetime(y, mo, d, h, mi, sec))  # ponytail: fração de segundo descartada
+    except ValueError:
+        return None
+
+
 def fmt_date(v):
     dt = from_serial(v)
     s = dt.strftime('%d/%m/%Y')
@@ -687,6 +702,7 @@ def xl_color(c):
 
 
 LOST = ' — será perdido ao salvar'
+AS_DATE = ' (serão salvos como data)'  # itens informativos: ajuste feito ao abrir
 
 
 def load_xlsx(path):
@@ -698,7 +714,7 @@ def load_xlsx(path):
         x = openpyxl.load_workbook(path)
     wb = Workbook()
     wb.sheets = []
-    rep, bad_funcs, bad_formulas = set(), set(), 0
+    rep, bad_funcs, bad_formulas, iso_dates = set(), set(), 0, 0
     for w in warns:
         if 'not supported' in str(w.message) or 'will be removed' in str(w.message):
             rep.add(f'Recurso não suportado pelo leitor ({w.message})' + LOST)
@@ -724,6 +740,7 @@ def load_xlsx(path):
                 sh.rowh[r - 1] = round(d.ht * 4 / 3)
         if ws.freeze_panes:
             sh.freeze = ref_rc(ws.freeze_panes)
+        texts = {}  # células de texto ISO convertidas em data -> texto bruto original
         for row in ws.iter_rows():
             for cell in row:
                 if type(cell).__name__ == 'MergedCell':
@@ -776,6 +793,11 @@ def load_xlsx(path):
                     raw = num_to_raw(v)
                 elif isinstance(v, date):  # datetime também é date
                     raw = fmt_date(to_serial(v if isinstance(v, datetime) else datetime(v.year, v.month, v.day)))
+                elif isinstance(v, str) and (d := parse_iso(v)) is not None:
+                    raw = fmt_date(d)
+                    texts[(r, c)] = v
+                    hm = from_serial(d).time() != time()
+                    sh.fmt[(r, c)] = f._replace(nf='Data', code=DATE_CODE + ' hh:mm' if hm else None)
                 elif isinstance(v, str):
                     raw = "'" + v if (to_number(v) is not None or parse_date(v) is not None
                                       or v.startswith(("'", '='))) else v
@@ -785,6 +807,10 @@ def load_xlsx(path):
                 sh.cells[(r, c)] = raw
         sh.src = ws.title
         sh.snapshot()
+        sh.base[0].update(texts)  # base = texto original: ao salvar, vão como data mesmo sem edição
+        iso_dates += len(texts)
+    if iso_dates:
+        rep.add(f'{iso_dates} textos no formato aaaa-mm-dd convertidos em data' + AS_DATE)
     if bad_formulas:
         funcs = f" (funções: {', '.join(sorted(bad_funcs))})" if bad_funcs else ''
         rep.add(f'{bad_formulas} fórmula(s) não suportada(s){funcs} — exibidas como texto; '
@@ -1410,16 +1436,17 @@ class App:
         self.show_report(rep)
 
     def show_report(self, rep):
-        keep = [x for x in rep if not x.endswith(LOST)]
+        info = [x for x in rep if x.endswith(AS_DATE)]
+        keep = [x for x in rep if not x.endswith((LOST, AS_DATE))]
         lost = [x[:-len(LOST)] for x in rep if x.endswith(LOST)]
-        msg = ''
+        msg = 'Ajustes feitos ao abrir:\n\n• ' + '\n• '.join(info) + '\n\n' if info else ''
         if keep:
             msg += ('Recursos preservados no arquivo ao salvar, mas que não aparecem aqui:\n\n• '
                     + '\n• '.join(keep) + '\n\n')
         if lost:
             msg += 'Recursos que serão PERDIDOS se você salvar:\n\n• ' + '\n• '.join(lost)
         if msg:
-            messagebox.showwarning('Relatório de compatibilidade', msg.strip(), parent=self.root)
+            (messagebox.showwarning if keep or lost else messagebox.showinfo)('Relatório de compatibilidade', msg.strip(), parent=self.root)
 
     def save(self):
         self.finish_edit()

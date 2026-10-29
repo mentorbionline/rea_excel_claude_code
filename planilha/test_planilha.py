@@ -4,7 +4,7 @@ import tempfile
 from datetime import datetime
 
 import openpyxl
-from openpyxl.styles import PatternFill
+from openpyxl.styles import Font, PatternFill
 
 from planilha import (DEF, LOST, Date, Err, Workbook, fmt_number, load_xlsx, nf_code, parse_nf, parse_tsv,
                       px_to_width, ref_rc, save_xlsx, shift_refs, to_excel_formula, to_number)
@@ -467,6 +467,33 @@ def test_ui_smoke():
         root.update()
     finally:
         root.destroy()
+
+
+def test_iso_text_dates():
+    x = openpyxl.Workbook()
+    ws = x.active
+    for i, v in enumerate(['1989-06-10 00:00:00', '2024-05-13', '2023-02-30 00:00:00', 'Fulano', '2024-05-13 08:30'], 1):
+        ws.cell(i, 1, v)
+    ws['A1'].font = Font(bold=True)
+    path = tmp('iso.xlsx')
+    x.save(path)
+    wb, rep = load_xlsx(path)
+    sh = wb.sheets[0]
+    assert isinstance(val(sh, 'A1'), Date) and sh.text(0, 0) == '10/06/1989', sh.raw(0, 0)
+    assert isinstance(val(sh, 'A2'), Date) and sh.text(1, 0) == '13/05/2024'
+    assert val(sh, 'A3') == '2023-02-30 00:00:00' and val(sh, 'A4') == 'Fulano'   # inválida e texto comum
+    assert sh.text(4, 0) == '13/05/2024 08:30' and sh.getfmt(0, 0).bold
+    assert '3 textos no formato aaaa-mm-dd convertidos em data' in ' '.join(rep), rep
+    assert not any(r.endswith(LOST) for r in rep) and not wb.dirty
+    save_xlsx(wb, path)                                    # sem editar nada
+    ws = openpyxl.load_workbook(path).active
+    assert ws['A1'].value == datetime(1989, 6, 10) and ws['A1'].number_format == 'dd/mm/yyyy'
+    assert ws['A2'].value == datetime(2024, 5, 13) and ws['A2'].number_format == 'dd/mm/yyyy'
+    assert ws['A5'].value == datetime(2024, 5, 13, 8, 30) and ws['A5'].number_format == 'dd/mm/yyyy hh:mm'
+    assert ws['A3'].value == '2023-02-30 00:00:00' and ws['A4'].value == 'Fulano'
+    assert ws['A1'].font.b and ws['A3'].number_format == 'General'
+    wb2, rep2 = load_xlsx(path)                            # já é data: nada a converter
+    assert rep2 == [] and wb2.sheets[0].text(0, 0) == '10/06/1989', rep2
 
 
 if __name__ == '__main__':

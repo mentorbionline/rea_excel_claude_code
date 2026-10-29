@@ -55,8 +55,13 @@ Planilha simples parecida com o Excel, escrita do zero em Python (tkinter + open
   células mescladas, filtros, formatação condicional, validação de dados, tabelas, comentários,
   hiperlinks, cores de tema, formatos de número desconhecidos, proteção, nomes definidos.
   Se o original sumiu ou não abre, grava do zero e avisa.
-- Ao abrir, mostra um relatório em duas partes: o que fica preservado mas não aparece aqui, e o que
-  será perdido ao salvar.
+- Ao abrir, datas gravadas como TEXTO no formato `aaaa-mm-dd` (ou `aaaa-mm-dd hh:mm[:ss]`, como
+  `1989-06-10 00:00:00`) viram data automaticamente: aparecem como `dd/mm/aaaa` (com `hh:mm` se a hora
+  não for meia-noite) e, ao salvar, vão para o arquivo como data de verdade (`dd/mm/yyyy`), mesmo sem
+  edição; fonte, preenchimento, bordas e alinhamento ficam como estavam. Datas inválidas
+  (`2023-02-30`) e texto `dd/mm/aaaa` continuam texto.
+- Ao abrir, mostra um relatório: ajustes feitos ao abrir (datas em texto convertidas), o que fica
+  preservado mas não aparece aqui, e o que será perdido ao salvar.
 
 ## Limitações conhecidas
 
