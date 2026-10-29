@@ -1,0 +1,7 @@
+rea/
+planilha/dist/
+build/
+*.spec
+__pycache__/
+*.pyc
+~$*.xlsx
